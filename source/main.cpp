@@ -1,26 +1,10 @@
 #include <Magick++.h>
-#include <iomanip>
 #include <iostream>
-#include <json/json.h>
-#include <map>
+#include <json/json.h> 
 #include <print>
-#include <sstream>
-#include "Magick++/Color.h"
-#include "Magick++/Include.h"
+#include <ranges>
+#include "image_processing.hpp"
 
-namespace Magick {
-std::string colorToHex(const Magick::Color& color) {
-  auto ss = std::stringstream();
-  unsigned int r = color.quantumRed() * 255 / QuantumRange;
-  unsigned int g = color.quantumGreen() * 255 / QuantumRange;
-  unsigned int b = color.quantumBlue() * 255 / QuantumRange;
-  ss << '#';
-  ss << std::hex << std::setw(2) << std::setfill('0') << r;
-  ss << std::hex << std::setw(2) << std::setfill('0') << g;
-  ss << std::hex << std::setw(2) << std::setfill('0') << b;
-  return ss.str();
-}
-}; // namespace Magick
 
 int main(int argc, char** argv) {
   Magick::InitializeMagick(*argv);
@@ -28,7 +12,7 @@ int main(int argc, char** argv) {
   for (int i = 1; i < argc; ++i) {
     try {
       image.read(argv[i]);
-      image.quantizeColorSpace(Magick::RGBColorspace);
+      image.quantizeColorSpace(Magick::RGBColorspace); // there is probably a cropping part missing somewhere
       image.quantizeColors(16);
       image.quantize();
       auto hist_map = std::map<Magick::Color, size_t>();
@@ -40,8 +24,8 @@ int main(int argc, char** argv) {
       std::sort(colors_hex.begin(), colors_hex.end(),
                 [](auto pair1, auto pair2) { return pair1.second > pair2.second; });
       auto j = Json::Value();
-      for (const auto& [idx, value] : std::views::enumerate(colors_hex)) {
-        j[std::format("color{}", idx)] = Magick::colorToHex(value.first);
+      for (const auto& [idx, value] : std::ranges::views::enumerate(colors_hex)) {
+        j[std::format("color{}", idx)] = cppwal::colorToHex(value.first);
       }
       std::cout << j << std::endl;
     } catch (Magick::Exception& e) {
@@ -59,3 +43,4 @@ int main(int argc, char** argv) {
  - then write a function to get the copy of vector to pass it to other classes that implement formatted_write_to_file
 -
  */
+  
