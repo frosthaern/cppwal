@@ -1,3 +1,5 @@
+#pragma once
+
 #include <Magick++.h>
 #include <filesystem>
 
@@ -6,21 +8,22 @@ class ImageProcessing {
   // operators
   ImageProcessing& operator=(ImageProcessing&);
 
-  // functions that act on object
+  public:
   std::vector<std::filesystem::path> paths;
-  std::vector<Magick::Color> colors;
+  std::vector<std::pair<Magick::Color, size_t>> colors;
   ImageProcessing(std::vector<std::filesystem::path> paths);
-  std::vector<Magick::Color> get_colors(); // just a getter, does nothing else
-  void extract_colors();                   // calls the process function and updates the this->colors
+  std::vector<std::pair<Magick::Color, size_t>> get_colors();
+  void extract_colors();
 };
 
 // functions that don't act on object
 std::vector<Magick::Geometry> calculate_geometry(Magick::Image& image);
-std::map<Magick::Color, size_t> process_image(Magick::Image& image, std::map<Magick::Color, size_t> &return_parameter);
-std::string colorToHex(const Magick::Color& color);
-std::map<Magick::Color, size_t>
-divide_image_and_process(std::pair<Magick::Image, std::vector<Magick::Geometry>>& image_geometry);
-
+void process_image(Magick::Image image,
+                   std::map<Magick::Color, size_t> &backparameter);
+std::string colorToHex(const Magick::Color color);
+void divide_image_and_process(
+    std::pair<Magick::Image, std::vector<Magick::Geometry>> image_geometry,
+    std::map<Magick::Color, size_t> &backparameter);
 
 } // namespace cppwal
 
