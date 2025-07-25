@@ -2,23 +2,21 @@
 #include <Magick++.h>
 #include <algorithm>
 #include <filesystem>
+#include <functional>
 #include <iomanip>
-#include <print>
 #include <thread>
 
 namespace cppwal {
 ImageProcessing::ImageProcessing(std::vector<std::filesystem::path> paths)
     : paths(paths), colors() {};
 
-std::vector<Magick::Color> ImageProcessing::get_colors() {
+std::vector<std::pair<Magick::Color, size_t>> ImageProcessing::get_colors() {
   return this->colors;
 }
 
 void ImageProcessing::extract_colors() {
   auto images =
       std::vector<std::pair<Magick::Image, std::vector<Magick::Geometry>>>();
-  auto image_maps = std::vector<std::map<Magick::Color, size_t>>(
-      images.size(), std::map<Magick::Color, size_t>());
 
   std::transform(this->paths.begin(), this->paths.end(),
                  std::back_inserter(images), [](auto file_path) {
@@ -27,23 +25,35 @@ void ImageProcessing::extract_colors() {
                    auto geometries = calculate_geometry(image);
                    return std::make_pair(image, geometries);
                  });
+  auto image_maps = std::vector<std::map<Magick::Color, size_t>>(
+      images.size(), std::map<Magick::Color, size_t>());
 
   auto threads = std::vector<std::thread>();
   for (int i = 0; i < images.size(); ++i) {
-    threads.push_back(
-        std::thread(divide_image_and_process, images[i], image_maps[i]));
+    threads.push_back(std::thread(divide_image_and_process, images[i],
+                                  std::ref(image_maps[i])));
   }
   std::for_each(threads.begin(), threads.end(),
                 [](std::thread& thread) { thread.join(); });
-  /*
-   * TODO: combine all those hashmap values into one value and put in it a
-   * vector and sort it and save it in the class variable
-   */
+
+  auto hm = std::map<Magick::Color, size_t>();
+  for (const auto maps : image_maps) {
+    for (const auto& [key, value] : maps) {
+      hm[key] += value;
+    }
+  }
+  this->colors = std::vector<std::pair<Magick::Color, size_t>>();
+  for (const auto& [key, value] : hm) {
+    this->colors.push_back(std::make_pair(key, value));
+  }
+  std::sort(
+      this->colors.begin(), this->colors.end(),
+      [](auto first, auto second) { return first.second > second.second; });
 }
 
 // i have to check if this one works too
 void divide_image_and_process(
-    std::pair<Magick::Image, std::vector<Magick::Geometry>>& image_geometry,
+    std::pair<Magick::Image, std::vector<Magick::Geometry>> image_geometry,
     std::map<Magick::Color, size_t>& backparameter) {
   auto total_map = std::map<Magick::Color, size_t>();
   auto m1 = std::map<Magick::Color, size_t>();
@@ -58,10 +68,10 @@ void divide_image_and_process(
   bottom_left.crop(image_geometry.second[2]);
   Magick::Image bottom_right(image_geometry.first);
   bottom_right.crop(image_geometry.second[3]);
-  std::thread t1(cppwal::process_image(top_right, m1));
-  std::thread t2(cppwal::process_image(top_left, m2));
-  std::thread t3(cppwal::process_image(bottom_left, m3));
-  std::thread t4(cppwal::process_image(bottom_right, m4));
+  std::thread t1(cppwal::process_image, top_right, std::ref(m1));
+  std::thread t2(cppwal::process_image, top_left, std::ref(m2));
+  std::thread t3(cppwal::process_image, bottom_left, std::ref(m3));
+  std::thread t4(cppwal::process_image, bottom_right, std::ref(m4));
   t1.join();
   t2.join();
   t3.join();
@@ -97,7 +107,7 @@ void process_image(Magick::Image image,
   backparameter = hist_map;
 }
 
-std::string colorToHex(const Magick::Color& color) {
+std::string colorToHex(const Magick::Color color) {
   auto ss = std::stringstream();
   const auto quantum = 65535;
   // technically you are supposed to use Magick::Quantum() for this but i am
