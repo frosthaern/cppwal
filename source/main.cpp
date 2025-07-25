@@ -3,15 +3,17 @@
 #include <json/json.h> 
 #include <print>
 #include <ranges>
+#include <filesystem>
 #include "image_processing.hpp"
 
 
 int main(int argc, char** argv) {
   Magick::InitializeMagick(*argv);
   auto image = Magick::Image();
+  auto path = std::filesystem::absolute(argv[1]);
   for (int i = 1; i < argc; ++i) {
     try {
-      image.read(argv[i]);
+      image.read(path.string());
       image.quantizeColorSpace(Magick::RGBColorspace); // there is probably a cropping part missing somewhere
       image.quantizeColors(16);
       image.quantize();

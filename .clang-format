@@ -17,7 +17,7 @@ AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
 
 # Line breaking and column rules
-ColumnLimit: 120
+ColumnLimit: 80
 BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: false
 PenaltyBreakBeforeFirstCallParameter: 19
