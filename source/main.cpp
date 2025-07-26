@@ -13,11 +13,9 @@ int main(int argc, char** argv) {
   for (int i = 1; i < argc; ++i)
     paths.push_back(std::filesystem::absolute(argv[i]));
   auto image_processor = cppwal::ImageProcessing(paths);
-  image_processor.extract_colors();
-  auto colors = image_processor.get_colors();
-
-  std::for_each_n(colors.begin(), 10, [](auto color) {
-    std::println("Red: {}\nGreen: {}\nBlue: {}\nPixels: {}\n", color.first.quantumRed(), color.first.quantumGreen(), color.first.quantumBlue(), color.second);
+  auto colors = image_processor.extract_colors();
+  std::ranges::for_each(colors, [](auto color) {
+    std::println("Hex: {}\nPixels: {}\n", cppwal::colorToHex(color.first), color.second);
   });
 }
 
