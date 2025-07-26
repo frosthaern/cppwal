@@ -35,3 +35,5 @@
 .cache/
 TODO.md
 build/
+.clang-format
+architecture_diagram.excalidraw
