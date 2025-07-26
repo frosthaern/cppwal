@@ -29,3 +29,8 @@ make
 ```
 
 Both methods produce the same result: the `cppwal` executable in the `build/` directory.
+
+## Upcoming Features
+
+- Support for exporting color palettes to various formats, including JSON, CSS, and key-value pairs.
+- User-defined output templates for custom-formatted color schemes.
